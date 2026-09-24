@@ -1,2 +1,2 @@
-LOAD_FILE=maze.txt
+LOAD_FILE=maze_trivial.txt
 OUTPUT_FILE=maze_reload.txt

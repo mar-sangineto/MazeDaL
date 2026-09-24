@@ -22,7 +22,7 @@ from parser import Parser
 
 
 class MazeSolver:
-    """Breadth-First Search maze solver."""
+    """Breadth-First or Depth-First Search maze solver."""
 
     def __init__(self, maze: Maze, config: Parser) -> None:
         """
@@ -38,6 +38,7 @@ class MazeSolver:
         self.maze = maze
         self.entry = config.entry
         self.exit = config.exit
+        self.algorithm = config.algorithm
 
         self.path: (
             list[tuple[int, int]] | None
@@ -127,7 +128,7 @@ class MazeSolver:
         }
         start = time.perf_counter()
         while queue:
-            current = queue.popleft()
+            current = queue.pop() if self.algorithm == "DFS" else queue.popleft()
             self.visited_nodes += 1
 
             if current == self.exit:

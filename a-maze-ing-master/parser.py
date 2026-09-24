@@ -171,6 +171,11 @@ class Parser:
                 raise ConfigError(f"[{key}]", "cannot be empty")
             self.load_file = value
 
+        elif key == "ALGORITHM":
+            if value not in ("BFS", "DFS"):
+                raise ConfigError(f"[{key}]", "must be BFS or DFS")
+            self.algorithm = value
+
         else:
             raise ConfigError("[" + key + "]", "unknown parameter")
 
