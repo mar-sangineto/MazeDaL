@@ -143,7 +143,9 @@ class MazeMenu:
             "\033[0m"
             )
 
-        if not self.generator.has_42_pattern:
+        if self.config.load_file is not None:
+            print(f"Maze loaded from `{self.config.load_file}`.\n")
+        elif not self.generator.has_42_pattern:
             print("42 pattern was not generated.\n")
 
     def _regenerate(self) -> None:
@@ -153,9 +155,18 @@ class MazeMenu:
         Resets current visualization state and
         updates the stored solution path.
         """
-        self.maze = Maze(self.config)
-        self.generator = MazeGenerator(self.maze, self.config)
-        self.generator.generate()
+        if self.config.load_file is not None:
+            self.maze, entry, exit_ = Maze.from_file(self.config.load_file)
+            self.config.entry = entry
+            self.config.exit = exit_
+            self.config.width = self.maze.width
+            self.config.height = self.maze.height
+            self.generator = MazeGenerator(self.maze, self.config)
+        else:
+            self.maze = Maze(self.config)
+            self.generator = MazeGenerator(self.maze, self.config)
+            self.generator.generate()
+
         solver = MazeSolver(self.maze, self.config)
         self.path = solver.solve()
         self.save = False

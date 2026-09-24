@@ -34,6 +34,7 @@ class Parser:
         self.perfect: bool | None = None
         self.seed: int | None = None
         self.algorithm: str = "BFS"
+        self.load_file: str | None = None
 
         self._read_file()
 
@@ -165,6 +166,11 @@ class Parser:
                 except ValueError as e:
                     raise ConfigError.invalid_int(f"[{key}]") from e
 
+        elif key == "LOAD_FILE":
+            if not value:
+                raise ConfigError(f"[{key}]", "cannot be empty")
+            self.load_file = value
+
         else:
             raise ConfigError("[" + key + "]", "unknown parameter")
 
@@ -175,6 +181,11 @@ class Parser:
         Raises exceptions when required
         fields are missing.
         """
+        if self.load_file is not None:
+            if self.output_file is None:
+                raise ConfigError.missing_field("[OUTPUT_FILE]")
+            return
+
         if self.width is None:
             raise ConfigError.missing_field("[WIDTH]")
 

@@ -13,6 +13,7 @@
 #
 # ****************************************************************************
 
+from exceptions import MazeError
 from parser import Parser
 
 
@@ -233,3 +234,120 @@ class Maze:
             [self.cell_to_hex(cell) for cell in row]
             for row in self.grid
         ]
+
+    @classmethod
+    def from_file(
+        cls, file_name: str
+    ) -> tuple["Maze", tuple[int, int], tuple[int, int]]:
+        """
+        Load a maze, entry and exit from a saved maze file.
+
+        Parses the hexadecimal wall grid produced by
+        MazeGenerator.save_maze, ignoring the trailing
+        solution line.
+
+        Args:
+            file_name: Path to the saved maze file.
+
+        Returns:
+            Tuple of (maze, entry, exit).
+        """
+        try:
+            with open(file_name, "r") as file:
+                content = file.read()
+        except OSError as e:
+            raise MazeError(f"Can't read maze file `{file_name}`.") from e
+
+        blocks = content.split("\n\n", 1)
+        if len(blocks) != 2:
+            raise MazeError(
+                f"Malformed maze file `{file_name}`: missing separator."
+            )
+
+        grid_lines = [line for line in blocks[0].splitlines() if line]
+        meta_lines = [line for line in blocks[1].splitlines() if line]
+
+        if not grid_lines:
+            raise MazeError(
+                f"Malformed maze file `{file_name}`: empty grid."
+            )
+
+        if len(meta_lines) < 2:
+            raise MazeError(
+                f"Malformed maze file `{file_name}`: missing entry/exit."
+            )
+
+        width = len(grid_lines[0])
+
+        maze = cls.__new__(cls)
+        maze.width = width
+        maze.height = len(grid_lines)
+        maze.grid = []
+
+        for y, line in enumerate(grid_lines):
+            if len(line) != width:
+                raise MazeError(
+                    f"Malformed maze file `{file_name}`: "
+                    f"inconsistent row width at row {y}."
+                )
+
+            row: list[Cell] = []
+            for hex_digit in line:
+                try:
+                    value = int(hex_digit, 16)
+                except ValueError as e:
+                    raise MazeError(
+                        f"Malformed maze file `{file_name}`: "
+                        f"invalid hex digit `{hex_digit}`."
+                    ) from e
+
+                cell = Cell()
+                cell.north = bool(value & 1)
+                cell.east = bool(value & 2)
+                cell.south = bool(value & 4)
+                cell.west = bool(value & 8)
+                row.append(cell)
+
+            maze.grid.append(row)
+
+        entry = maze._parse_coordinates(meta_lines[0], "entry", file_name)
+        exit_ = maze._parse_coordinates(meta_lines[1], "exit", file_name)
+
+        if entry == exit_:
+            raise MazeError(
+                f"Malformed maze file `{file_name}`: "
+                "entry and exit are the same."
+            )
+
+        return maze, entry, exit_
+
+    def _parse_coordinates(
+        self, line: str, label: str, file_name: str
+    ) -> tuple[int, int]:
+        """
+        Parse and validate a coordinates line.
+
+        Args:
+            line: Raw `x,y` coordinates line.
+            label: Coordinate field name for error messages.
+            file_name: Source maze file name.
+
+        Returns:
+            Parsed and validated coordinates.
+        """
+        try:
+            x_str, y_str = line.split(",")
+            x, y = int(x_str.strip()), int(y_str.strip())
+        except Exception as e:
+            raise MazeError(
+                f"Malformed maze file `{file_name}`: "
+                f"invalid {label} `{line}`."
+            ) from e
+
+        if not self.in_bounds(x, y):
+            raise MazeError(
+                f"Malformed maze file `{file_name}`: "
+                f"{label} out of bounds."
+            )
+
+        return (x, y)

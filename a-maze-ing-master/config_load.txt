@@ -1,0 +1,2 @@
+LOAD_FILE=maze.txt
+OUTPUT_FILE=maze_reload.txt

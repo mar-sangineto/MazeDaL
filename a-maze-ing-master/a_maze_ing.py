@@ -40,10 +40,19 @@ def main() -> None:
         config_path = sys.argv[1]
         config = Parser(config_path)
 
-        maze = Maze(config)
+        if config.load_file is not None:
+            maze, entry, exit_ = Maze.from_file(config.load_file)
+            config.entry = entry
+            config.exit = exit_
+            config.width = maze.width
+            config.height = maze.height
 
-        gen = MazeGenerator(maze, config)
-        gen.generate()
+            gen = MazeGenerator(maze, config)
+        else:
+            maze = Maze(config)
+
+            gen = MazeGenerator(maze, config)
+            gen.generate()
 
         solver = MazeSolver(maze, config)
         solver.solve()
